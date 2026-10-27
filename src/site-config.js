@@ -3,8 +3,7 @@
  * 「报告缺失技能」issue 与「手动更新数据」Actions 链接都从 repoUrl 派生。
  */
 export const SITE_CONFIG = {
-  // TODO：部署前替换为真实仓库地址（「报告缺失技能」issue 与「手动更新数据」Actions 链接都从它派生）
-  repoUrl: "https://github.com/OWNER/ai-skill-search",
+  repoUrl: "https://github.com/zynethix/ai-skill-search",
 };
 
 export function reportIssueUrl() {

@@ -152,8 +152,7 @@ generatedAt 距现在：< 1 小时 →「数据更新于 X 分钟前」；< 24 �
 
 ```js
 export const SITE_CONFIG = {
-  // TODO：部署前替换为真实仓库地址（「报告缺失技能」issue 与「手动更新数据」Actions 链接都从它派生）
-  repoUrl: "https://github.com/OWNER/ai-skill-search",
+  repoUrl: "https://github.com/zynethix/ai-skill-search",
 };
 ```
 
