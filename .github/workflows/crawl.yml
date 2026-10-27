@@ -1,0 +1,41 @@
+name: crawl
+
+on:
+  schedule:
+    # 每天 UTC 02:30（docs/design.md「GitHub Actions」）
+    - cron: "30 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Crawl skills
+        run: node crawler/crawl.mjs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # 数据有变化才提交（bot 身份），无变化零提交（功能点 #4）；先 add 再比 staged，
+      # 首跑的未跟踪文件也能被检出变化
+      - name: Commit updated data if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/skills.json
+          if git diff --cached --quiet -- public/skills.json; then
+            echo "public/skills.json 无变化，跳过提交"
+            exit 0
+          fi
+          git commit -m "chore: update skills data"
+          git push

@@ -1,0 +1,22 @@
+{
+  "name": "ai-skill-search",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "AI Skill 搜索：搜索 GitHub 上的 SKILL.md 技能包（纯静态站 + 零依赖爬虫）",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "crawl": "node crawler/crawl.mjs",
+    "test": "node --test docs/batches/"
+  },
+  "dependencies": {
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.5.0",
+    "vite": "^6.3.5"
+  }
+}
