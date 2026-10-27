@@ -17,11 +17,15 @@ function formatDate(iso) {
  */
 export default function SkillCard({ skill }) {
   const [expanded, setExpanded] = useState(false);
+  const bodyId = `skill-body-${String(skill.id).replace(/[^a-zA-Z0-9-]/g, '-')}`;
 
   return (
     <article
       className={`skill-card${expanded ? ' expanded' : ''}`}
-      onClick={() => setExpanded((v) => !v)}
+      onClick={() => {
+        if (window.getSelection()?.toString()) return; // 拖选文字时不误触展开
+        setExpanded((v) => !v);
+      }}
     >
       <div className="skill-card-header">
         <h3 className="skill-name">
@@ -29,6 +33,7 @@ export default function SkillCard({ skill }) {
             type="button"
             className="skill-name-btn"
             aria-expanded={expanded}
+            aria-controls={bodyId}
             onClick={(e) => {
               e.stopPropagation();
               setExpanded((v) => !v);
@@ -56,10 +61,10 @@ export default function SkillCard({ skill }) {
         <span>更新于 {formatDate(skill.updatedAt)}</span>
       </div>
       <p className="skill-install">
-        <code>{skill.installMethod}</code>
+        <code>{skill.installMethod}</code> <span className="install-hint">（来自技能作者，请自行核实）</span>
       </p>
       {expanded && (
-        <div className="skill-body" onClick={(e) => e.stopPropagation()}>
+        <div className="skill-body" id={bodyId} onClick={(e) => e.stopPropagation()}>
           <pre>{skill.body}</pre>
           {skill.sensitive && (
             <p className="sensitive-note">

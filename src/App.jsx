@@ -86,7 +86,7 @@ export default function App() {
       </main>
 
       <footer className="site-footer">
-        <p>数据来源：GitHub 公开仓库 · 每日自动更新</p>
+        <p>数据来源：GitHub 公开仓库 · 数据每日自动抓取</p>
       </footer>
     </div>
   );

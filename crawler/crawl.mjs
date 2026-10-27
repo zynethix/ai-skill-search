@@ -8,7 +8,7 @@
  * 4. 语言判定见 lang-detect.mjs（只收中英）。
  * 5. 敏感判定见 sources.mjs matchesSensitive。
  * 6. 按 star 降序写 public/skills.json；数据无变化时不重写（配合 Actions diff 零提交）。
- * 7. 限流：API 响应 x-ratelimit-remaining 为 0 → 停止新请求、保留已有结果照常写盘、警告退出。
+ * 7. 限流：API 响应 x-ratelimit-remaining 为 0 → 停止新请求；结果走发布门（过门写盘 exit 0 / 不过门不写盘 exit 1），限流另有警告。
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';

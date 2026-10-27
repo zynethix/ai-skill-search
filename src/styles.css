@@ -156,6 +156,11 @@ body {
   white-space: nowrap;
 }
 
+.install-hint {
+  font-size: 12px;
+  color: var(--muted);
+}
+
 .sensitive-tag {
   font-size: 12px;
   color: #9a6700;

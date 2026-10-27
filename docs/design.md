@@ -163,7 +163,7 @@ export const SITE_CONFIG = {
 
 - 触发：`schedule: cron "30 2 * * *"`（每天 UTC 02:30）+ `workflow_dispatch`（owner 手动跑，决策 #13 A 方案）。
 - 权限：`permissions: { contents: write }`。
-- 步骤：checkout → setup-node 22 → `node crawler/crawl.mjs`（env GITHUB_TOKEN）→ 先 `git add public/skills.json` 再 `git diff --cached --quiet`（首跑未跟踪文件也能检出变化），有变化才 commit（bot 身份）+ push，无变化零提交（功能点 #4）。
+- 步骤：checkout → setup-node 22 → `node crawler/crawl.mjs`（env GITHUB_TOKEN）→ 先 `git add public/skills.json` 再 `git diff --cached --quiet`（首跑未跟踪文件也能检出变化），有变化才 commit（bot 身份）+ push，无变化零提交（功能点 #4）。数据提交后需重新部署才到达线上站点（部署链路另批确认）。
 
 ## 文件清单
 
@@ -171,11 +171,11 @@ export const SITE_CONFIG = {
 
 ```
 package.json（22 行）· vite.config.js（8 行）· index.html（13 行）· .gitignore（4 行）
-src/main.jsx（10 行）· src/App.jsx（93 行）· src/search.js（78 行）· src/site-config.js（18 行）· src/styles.css（254 行）
-src/components/SearchBar.jsx（45 行）· src/components/SkillCard.jsx（76 行）
+src/main.jsx（10 行）· src/App.jsx（93 行）· src/search.js（78 行）· src/site-config.js（17 行）· src/styles.css（259 行）
+src/components/SearchBar.jsx（45 行）· src/components/SkillCard.jsx（81 行）
 crawler/crawl.mjs（408 行）· crawler/sources.mjs（54 行）· crawler/lang-detect.mjs（24 行）
 public/skills.json（爬虫产物，845 条 ≈5.5MB）
-.github/workflows/crawl.yml（41 行）
+.github/workflows/crawl.yml（46 行）
 docs/batches/2026-10-26-ai-skill-search-v1.test.mjs（255 行，本批单元测试，随批档存放）
 ```
 
@@ -183,7 +183,7 @@ docs/batches/2026-10-26-ai-skill-search-v1.test.mjs（255 行，本批单元测�
 
 依赖：react、react-dom（deps）；vite、@vitejs/plugin-react（devDeps）。构建 `base: './'`（相对路径，产物可放任意子路径）。`.gitignore` 含 node_modules/、dist/、.crawl-cache/。
 
-**体积与拆分**：crawler/crawl.mjs 394 行（300–500 预警带内）——已拆独立件：lang-detect.mjs（语言判定）、sources.mjs（源清单/敏感词）；文件内 parseFrontmatter / shouldPublish / collectRepos / crawlRepo / crawlBatch 均为具名函数，删去函数体后骨架仍可读。再增长的下一拆分缝 = collectRepos（收仓）与 main 尾部写盘段外移。App.jsx 93 行，双框与卡片已拆组件。
+**体积与拆分**：crawler/crawl.mjs 408 行（300–500 预警带内）——已拆独立件：lang-detect.mjs（语言判定）、sources.mjs（源清单/敏感词）；文件内 parseFrontmatter / shouldPublish / collectRepos / crawlRepo / crawlBatch 均为具名函数，删去函数体后骨架仍可读。再增长的下一拆分缝 = collectRepos（收仓）与 main 尾部写盘段外移。App.jsx 93 行，双框与卡片已拆组件。
 
 **命名查重**：SITE_CONFIG / formatFreshness / MIN_SKILLS / CRAWL_LIMIT / shouldPublish / parseFrontmatter —— 本仓均无既有同名（新建仓、无同类先例）。
 
