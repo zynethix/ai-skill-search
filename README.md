@@ -37,4 +37,6 @@ node --test docs/batches/2026-10-26-ai-skill-search-v1.test.mjs   # 单元测试
 
 ## 部署
 
-静态产物部署到 EdgeOne Pages；部署命令必须带 `-a overseas`（海外节点、免备案），执行前需用户确认（详见 AGENTS.md）。
+线上地址：https://ai-skill-search-dpe5n4wcdidp.edgeone.dev/（EdgeOne 部署返回的 Deploy URL，2026-11-04 取得）
+
+静态产物部署到 EdgeOne Pages；部署命令必须带 `-a overseas`（海外节点、免备案），执行前需用户确认（详见 AGENTS.md）。数据更新提交后，需要重新部署才会到达线上站点。

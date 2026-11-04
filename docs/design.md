@@ -89,7 +89,7 @@ anthropics/skills、obra/superpowers、5tldr/claude-skills（中文合集）、J
 
 ### 流程（crawler/crawl.mjs）
 
-1. 收仓：逐个清单取 raw README，正则贪婪捕获 `github.com/{owner}/{repo}` 前两段、忽略其后路径（/tree、/blob 等深链同样收仓；旧前瞻排除法曾漏转义连字符、把带连字符仓库名截成前缀——已弃用，有单测）；跳过清单自身、github.com 官方页、非 owner/repo 形式；链接尾部 `.git` 后缀与句尾句点剥离，官方页/组织路径如 orgs、topics 走黑名单；与直连仓并集、去重；直连仓排前，总量受 `CRAWL_LIMIT`（env，默认 40）截断。
+1. 收仓：逐个清单取 raw README，正则贪婪捕获 `github.com/{owner}/{repo}` 前两段、忽略其后路径（/tree、/blob 等深链同样收仓，带连字符的仓库名不截断，有单测）；跳过清单自身、github.com 官方页、非 owner/repo 形式；链接尾部 `.git` 后缀与句尾句点剥离，官方页/组织路径如 orgs、topics 走黑名单；与直连仓并集、去重；直连仓排前，总量受 `CRAWL_LIMIT`（env，默认 40）截断。
 2. 逐仓：GitHub API `GET /repos/{o}/{r}` → default_branch / stargazers_count / pushed_at；再 `GET /repos/{o}/{r}/git/trees/{branch}?recursive=1` → 所有名为 SKILL.md（含 skill.md）的路径。两项都缓存到 `.crawl-cache/`（JSON 文件，按 owner/repo 命名），二次运行直接读缓存，不耗 API；tree 截断（truncated=true）时打印警告（超大仓库防静默漏收）。
 3. 逐条 SKILL.md：raw.githubusercontent.com 抓原文（不耗 API 配额）；解析 frontmatter（首行起两个 `---` 之间，逐行 `key: value`，只认 name/description/install；YAML 块标量（> | >- |-）折叠续行，仅剩标记符视为缺失走正文兜底）；body = frontmatter 之后的全文。
 4. 语言判定（crawler/lang-detect.mjs）：body 中统计 CJK 字符 c、日文假名 k、拉丁字母 l；c+k+l = 0 → 跳过；k/(c+k+l) > 0.1 → 跳过（日文等，需求只收中英）；c/(c+l) ≥ 0.3 → zh；否则 en。
@@ -163,14 +163,22 @@ export const SITE_CONFIG = {
 
 - 触发：`schedule: cron "30 2 * * *"`（每天 UTC 02:30）+ `workflow_dispatch`（owner 手动跑，决策 #13 A 方案）。
 - 权限：`permissions: { contents: write }`。
-- 步骤：checkout → setup-node 22 → `node crawler/crawl.mjs`（env GITHUB_TOKEN）→ 先 `git add public/skills.json` 再 `git diff --cached --quiet`（首跑未跟踪文件也能检出变化），有变化才 commit（bot 身份）+ push，无变化零提交（功能点 #4）。数据提交后需重新部署才到达线上站点（部署链路另批确认）。
+- 步骤：checkout → setup-node 22 → `node crawler/crawl.mjs`（env GITHUB_TOKEN）→ 先 `git add public/skills.json` 再 `git diff --cached --quiet`（首跑未跟踪文件也能检出变化），有变化才 commit（bot 身份）+ push，无变化零提交（功能点 #4）。数据提交后需手动重新部署才到达线上站点（见「部署」节）。
+
+## 部署
+
+- 平台：EdgeOne Pages，构建产物 `dist/`（`npm run build`）。
+- 命令：`edgeone makers deploy -a overseas`，`-a overseas` 不可省略（海外节点、免备案）；部署属对外发布动作，执行前须用户确认。
+- 线上地址：以 README.md「部署」节为准（地址只在那里写一处）。
+- 部署完成后须把 Deploy URL 告诉用户。
+- 线上数据新鲜度取决于 owner 手动重新部署：每日爬取只更新仓库内的 `public/skills.json`，不会自动到达线上站点。
 
 ## 文件清单
 
 新建：
 
 ```
-package.json（22 行）· vite.config.js（8 行）· index.html（13 行）· .gitignore（4 行）
+package.json（22 行）· vite.config.js（8 行）· index.html（13 行）· .gitignore（9 行）
 src/main.jsx（10 行）· src/App.jsx（93 行）· src/search.js（78 行）· src/site-config.js（17 行）· src/styles.css（259 行）
 src/components/SearchBar.jsx（45 行）· src/components/SkillCard.jsx（81 行）
 crawler/crawl.mjs（408 行）· crawler/sources.mjs（54 行）· crawler/lang-detect.mjs（24 行）
@@ -181,7 +189,7 @@ docs/batches/2026-10-26-ai-skill-search-v1.test.mjs（255 行，本批单元测�
 
 更新：README.md（运行说明）、docs/README.md（文档地图，本批新建）。不改：docs/requirements.md、AGENTS.md。
 
-依赖：react、react-dom（deps）；vite、@vitejs/plugin-react（devDeps）。构建 `base: './'`（相对路径，产物可放任意子路径）。`.gitignore` 含 node_modules/、dist/、.crawl-cache/。
+依赖：react、react-dom（deps）；vite、@vitejs/plugin-react（devDeps）。构建 `base: './'`（相对路径，产物可放任意子路径）。`.gitignore` 含 node_modules/、dist/、.crawl-cache/、.DS_Store，以及 EdgeOne 部署产生的 .env、.edgeone/*、.tef_dist/*。
 
 **体积与拆分**：crawler/crawl.mjs 408 行（300–500 预警带内）——已拆独立件：lang-detect.mjs（语言判定）、sources.mjs（源清单/敏感词）；文件内 parseFrontmatter / shouldPublish / collectRepos / crawlRepo / crawlBatch 均为具名函数，删去函数体后骨架仍可读。再增长的下一拆分缝 = collectRepos（收仓）与 main 尾部写盘段外移。App.jsx 93 行，双框与卡片已拆组件。
 
@@ -198,19 +206,20 @@ docs/batches/2026-10-26-ai-skill-search-v1.test.mjs（255 行，本批单元测�
 | 5 | 检索与排序 | `node --test docs/batches/2026-10-26-ai-skill-search-v1.test.mjs` 全绿（相关度 > star、语言隔离、中文子串、空词全量、纯符号空态） |
 | 6 | 语言判定 | 单测覆盖 zh / en / 日文跳过 / 空正文跳过 |
 | 7 | 敏感标记 | 单测覆盖关键词命中 → sensitive=true |
-| 8 | 卡片六项 + 标签 + 展开 + 查看源码 | 人工走查（主 agent 浏览器验收，实录落批档 §1；UI 自动化集成套件留待测试依赖批准后引入，届时并入 RTM 行） |
+| 8 | 卡片六项 + 标签 + 展开 + 查看源码 | 人工走查（主 agent 浏览器验收，实录落批档 §1） |
 | 9 | 新鲜度文案 | 单测覆盖分钟/小时/天三档 |
 | 10 | 报告缺失入口 | site-config.js 派生出 issue 链接；页面可见性同 #8 人工走查 |
 | 11 | 发布门 | 单测覆盖：0 条 / 低于下限 / 缩水 >50% 拒绝发布，保留既有文件 |
 | 12 | frontmatter 块标量 | 单测覆盖 `>`/`\|-` 折叠与仅剩标记符兜底；重爬后 skills.json 无裸标记符描述 |
 | 13 | 链接正则 | 单测：带连字符仓库名不被截断、深链收仓、裸链接正常 |
 | 14 | 卡片键盘可达 | 名称按钮原生键盘可达；内部链接 Enter 不被拦截（构建后人工走查） |
+| 15 | 线上部署可用 | 部署后人工打开 README.md 所记线上地址，确认页面加载、技能数据与新鲜度文案正常（用户浏览器确认，落批档 §4） |
 
-验收策略：单测（随批档存放）覆盖纯逻辑（检索/语言判定/敏感/新鲜度/发布门/块标量）；构建 + 语法检查保证产物与脚本；用户可见行为由主 agent 浏览器走查人工验收（实录落批档 §1）。UI 自动化集成套件属依赖决策（待用户批准测试依赖），方案待办见台账。
+验收策略：单测（随批档存放）覆盖纯逻辑（检索/语言判定/敏感/新鲜度/发布门/块标量）；构建保证产物；用户可见行为由主 agent 浏览器走查人工验收（实录落批档 §1）。本项目不设 UI 自动化集成套件、无 RTM 追溯表（用户裁定不做）：用户可见行为靠人工走查，没有可被改动波及的集成用例行。
 
 ## 边界（明确不做，v1）
 
-账号/登录；机器翻译与词表；语义搜索（embedding）；公开用户实时重爬（仅 owner 手动触发）；中英以外语言收录；内容隐藏（敏感类全收录仅打标）；EdgeOne 部署（另批，需用户确认 + `-a overseas`）。
+账号/登录；机器翻译与词表；语义搜索（embedding）；公开用户实时重爬（仅 owner 手动触发）；中英以外语言收录；内容隐藏（敏感类全收录仅打标）；UI 自动化集成套件（用户裁定不做，用户可见行为靠人工走查）。
 
 ## 最近先例
 
